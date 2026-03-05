@@ -1,0 +1,101 @@
+[gd_scene load_steps=15 format=3 uid="uid://cgv6gr62u0cu8"]
+
+[ext_resource type="PackedScene" uid="uid://ccujd1tyo64q7" path="res://scenes/player.tscn" id="1_00tan"]
+[ext_resource type="Script" uid="uid://hmreg60efmhd" path="res://scripts/MainCamera.cs" id="2_00tan"]
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_a6gd1"]
+size = Vector3(20, 0.5, 10)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ct7aa"]
+
+[sub_resource type="BoxMesh" id="BoxMesh_7biu0"]
+material = SubResource("StandardMaterial3D_ct7aa")
+size = Vector3(20, 0.5, 10)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_00tan"]
+size = Vector3(4, 4, 1)
+
+[sub_resource type="BoxMesh" id="BoxMesh_l1v76"]
+size = Vector3(4, 4, 1)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_l1v76"]
+size = Vector3(6, 1, 6)
+
+[sub_resource type="BoxMesh" id="BoxMesh_ct7aa"]
+size = Vector3(6, 1, 6)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ct7aa"]
+size = Vector3(5, 5, 5)
+
+[sub_resource type="BoxMesh" id="BoxMesh_ocj2s"]
+size = Vector3(5, 5, 5)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_ocj2s"]
+size = Vector3(1, 1, 4)
+
+[sub_resource type="BoxMesh" id="BoxMesh_din8e"]
+size = Vector3(1, 1, 4)
+
+[sub_resource type="Environment" id="Environment_00tan"]
+
+[node name="Gameplay" type="Node3D"]
+
+[node name="Level" type="Node3D" parent="."]
+
+[node name="StaticBody3D" type="StaticBody3D" parent="Level"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -1.5, 0)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Level/StaticBody3D"]
+shape = SubResource("BoxShape3D_a6gd1")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Level/StaticBody3D"]
+mesh = SubResource("BoxMesh_7biu0")
+
+[node name="StaticBody3D2" type="StaticBody3D" parent="Level"]
+transform = Transform3D(1, 0, 0, 0, 0.7071067, 0.7071067, 0, -0.7071067, 0.7071067, 0, -1, -3)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Level/StaticBody3D2"]
+shape = SubResource("BoxShape3D_00tan")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Level/StaticBody3D2"]
+mesh = SubResource("BoxMesh_l1v76")
+
+[node name="StaticBody3D3" type="StaticBody3D" parent="Level"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, -7.05)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Level/StaticBody3D3"]
+shape = SubResource("BoxShape3D_l1v76")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Level/StaticBody3D3"]
+mesh = SubResource("BoxMesh_ct7aa")
+
+[node name="StaticBody3D4" type="StaticBody3D" parent="Level"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 0, -6)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Level/StaticBody3D4"]
+shape = SubResource("BoxShape3D_ct7aa")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Level/StaticBody3D4"]
+mesh = SubResource("BoxMesh_ocj2s")
+
+[node name="StaticBody3D5" type="StaticBody3D" parent="Level"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5, 1, -2)
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Level/StaticBody3D5"]
+shape = SubResource("BoxShape3D_ocj2s")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Level/StaticBody3D5"]
+mesh = SubResource("BoxMesh_din8e")
+
+[node name="Player" parent="." instance=ExtResource("1_00tan")]
+
+[node name="MainCamera" type="Camera3D" parent="."]
+transform = Transform3D(0.7071068, -0.5, 0.5, 0, 0.7071068, 0.7071068, -0.7071068, -0.5, 0.5, 3, 3, 3)
+current = true
+script = ExtResource("2_00tan")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_00tan")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="WorldEnvironment"]
+transform = Transform3D(0.63607824, -0.17226526, 0.7521497, 0, 0.9747612, 0.2232501, -0.77162457, -0.14200453, 0.6200244, 5, 5, 5)

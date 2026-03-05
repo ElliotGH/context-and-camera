@@ -1,0 +1,3 @@
+- Preferred movement: ease accel constant decel
+- The accel methods changed how natural it felt navigating the level, as well as how responsive the player felt controlling
+- W = move forward, S = move backward, A = rotate left, D = rotate right, N = switch movement type
