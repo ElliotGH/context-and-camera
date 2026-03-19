@@ -6,6 +6,7 @@ public partial class Player : CharacterBody3D
     public float FacingAngle = 0.0f;
 
     public float MoveSpeed = 5.0f;
+    public float MoveDeadzone = 0.18f;
     public float CrouchSpeed = 0.5f;
     public float TurnSpeed = 3.0f;
     public float Accel = 10.0f;
@@ -19,8 +20,8 @@ public partial class Player : CharacterBody3D
     public bool JumpQueued = false;
 
     private MeshInstance3D PlayerMesh;
-    private CollisionShape3D SphereUpper; // upper part of the collision shape(for ducking)
-    private CollisionShape3D SphereLower; // lower part of the collision shape (for ducking)
+    private CollisionShape3D SphereUpper; // upper part of the collision shape (ducking)
+    private CollisionShape3D SphereLower; // lower part of the collision shape (ducking)
 
     private float MeshScaleY;
     private Vector3 UpperSphereStartPos;
@@ -51,21 +52,42 @@ public partial class Player : CharacterBody3D
         if (Input.IsActionJustPressed("move_switch"))
             CurrentMovement = (MovementType)(((int)CurrentMovement + 1) % 3);
 
-        if (Input.IsActionPressed("rotate_left"))
-            FacingAngle -= TurnSpeed * dt;
-        if (Input.IsActionPressed("rotate_right"))
-            FacingAngle += TurnSpeed * dt;
+        Vector2 movement = new(-Input.GetJoyAxis(0, JoyAxis.RightX), Input.GetJoyAxis(0, JoyAxis.RightY));
+
+        float moveAmount = movement.Length();
+        Vector2 moveInput = Vector2.Zero;
+
+        if (moveAmount > MoveDeadzone)
+        {
+            float remapped = (moveAmount - MoveDeadzone) / (1.0f - MoveDeadzone);
+            remapped = Mathf.Clamp(remapped, 0.0f, 1.0f);
+
+            remapped *= remapped;
+
+            moveInput = movement.Normalized() * remapped;
+        }
 
         FacingAngle = Mathf.Wrap(FacingAngle, -Mathf.Pi, Mathf.Pi);
 
         bool isDucking = Input.IsActionPressed("move_duck");
         UpdateCrouch(isDucking);
 
-        Vector3 dir = new(Mathf.Sin(FacingAngle), 0, -Mathf.Cos(FacingAngle));
-        float input = (Input.IsActionPressed("move_forward") ? 1f : 0f) + (Input.IsActionPressed("move_backward") ? -1f : 0f);
+        Vector3 forward = new(Mathf.Sin(FacingAngle), 0, -Mathf.Cos(FacingAngle));
+        Vector3 right = new(forward.Z, 0, -forward.X);
+
+        float forwardBackward = -moveInput.Y;
+        float leftRight = moveInput.X;
+
+        if (forwardBackward < 0.0f)
+            forwardBackward *= 0.7f;
 
         float maxSpeed = isDucking ? (MoveSpeed * CrouchSpeed) : MoveSpeed;
-        Vector3 target = dir * (input * maxSpeed);
+
+        Vector3 target =
+            (forward * forwardBackward + right * leftRight) * maxSpeed;
+
+        if (target.LengthSquared() > maxSpeed * maxSpeed)
+            target = target.Normalized() * maxSpeed;
 
         Vector3 v = Velocity;
         Vector3 gravity = GetGravity();
@@ -75,11 +97,11 @@ public partial class Player : CharacterBody3D
         {
             AirTime = 0.0f;
             IsJumping = false;
-            if (v.Y > 0.0f) v.Y = 0.0f;
+            if (v.Y > 0.0f)
+                v.Y = 0.0f;
         }
         else
         {
-            // apply gravity
             AirTime += dt;
             v += gravity * dt;
         }
@@ -96,7 +118,7 @@ public partial class Player : CharacterBody3D
         {
             IsJumping = true;
             JumpTween?.Kill();
-            // jump animation
+
             JumpTween = CreateTween();
             JumpTween.SetParallel(false);
             JumpTween.TweenInterval(0.1f);
@@ -106,8 +128,8 @@ public partial class Player : CharacterBody3D
             JumpTween.TweenProperty(PlayerMesh, "scale:y", MeshScaleY, 0.0f);
         }
 
-        Vector2 v2 = new Vector2(v.X, v.Z);
-        Vector2 target2 = new Vector2(target.X, target.Z);
+        Vector2 v2 = new(v.X, v.Z);
+        Vector2 target2 = new(target.X, target.Z);
 
         switch (CurrentMovement)
         {
@@ -116,29 +138,39 @@ public partial class Player : CharacterBody3D
                 break;
 
             case MovementType.SlowAccelFastDecel:
-                if (target2.Length() > v2.Length())
-                    v2 = v2.MoveToward(target2, Accel * dt);   // accelerate
-                else
-                    v2 = v2.MoveToward(target2, Accel * 2.0f * dt);   // fast stop
+                {
+                    float accelRate = Accel;
+                    float decelRate = Accel * 2.0f;
+
+                    if (target2.LengthSquared() > v2.LengthSquared())
+                        v2 = v2.MoveToward(target2, accelRate * dt);
+                    else
+                        v2 = v2.MoveToward(target2, decelRate * dt);
+                }
                 break;
 
             case MovementType.EaseAccelConstDecel:
-
-                if (target2.Length() > 0.01f)
                 {
-                    float speed = v2.Length();
-                    float targetSpeed = target2.Length();
+                    if (target2.Length() > 0.01f)
+                    {
+                        float speed = v2.Length();
+                        float targetSpeed = target2.Length();
 
-                    float t = 1f - Mathf.Exp(-6.0f * dt);
-                    speed = Mathf.Lerp(speed, targetSpeed, t);
+                        float t = 1.0f - Mathf.Exp(-6.0f * dt);
+                        speed = Mathf.Lerp(speed, targetSpeed, t);
 
-                    v2 = target2.Normalized() * speed;
+                        Vector2 desiredDir = target2.Normalized();
+
+                        Vector2 currentDir = v2.Length() > 0.01f ? v2.Normalized() : desiredDir;
+                        currentDir = currentDir.Lerp(desiredDir, 1.0f - Mathf.Exp(-10.0f * dt)).Normalized();
+
+                        v2 = currentDir * speed;
+                    }
+                    else
+                    {
+                        v2 = v2.MoveToward(Vector2.Zero, Accel * 2.0f * dt);
+                    }
                 }
-                else
-                {
-                    v2 = v2.MoveToward(Vector2.Zero, Accel * 2.0f * dt);
-                }
-
                 break;
         }
 
