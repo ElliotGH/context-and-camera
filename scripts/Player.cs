@@ -3,8 +3,6 @@ using System;
 
 public partial class Player : CharacterBody3D
 {
-    public float FacingAngle = 0.0f;
-
     public float MoveSpeed = 5.0f;
     public float MoveDeadzone = 0.18f;
     public float CrouchSpeed = 0.5f;
@@ -19,6 +17,7 @@ public partial class Player : CharacterBody3D
     public bool IsJumping = false;
     public bool JumpQueued = false;
 
+    private MainCamera Camera;
     private MeshInstance3D PlayerMesh;
     private CollisionShape3D SphereUpper; // upper part of the collision shape (ducking)
     private CollisionShape3D SphereLower; // lower part of the collision shape (ducking)
@@ -35,8 +34,14 @@ public partial class Player : CharacterBody3D
 
     private MovementType CurrentMovement = MovementType.SlowAccelFastDecel;
 
+    public float GetFacingYaw()
+    {
+        return PlayerMesh.Rotation.Y;
+    }
+
     public override void _Ready()
     {
+        Camera = GetNode<MainCamera>("../MainCamera");
         PlayerMesh = GetNode<MeshInstance3D>("PlayerMesh");
         SphereUpper = GetNode<CollisionShape3D>("SphereUpper");
         SphereLower = GetNode<CollisionShape3D>("SphereLower");
@@ -67,12 +72,11 @@ public partial class Player : CharacterBody3D
             moveInput = movement.Normalized() * remapped;
         }
 
-        FacingAngle = Mathf.Wrap(FacingAngle, -Mathf.Pi, Mathf.Pi);
-
         bool isDucking = Input.IsActionPressed("move_duck");
         UpdateCrouch(isDucking);
 
-        Vector3 forward = new(Mathf.Sin(FacingAngle), 0, -Mathf.Cos(FacingAngle));
+        float camYaw = Camera.Yaw;
+        Vector3 forward = new(-Mathf.Sin(camYaw), 0, -Mathf.Cos(camYaw));
         Vector3 right = new(forward.Z, 0, -forward.X);
 
         float forwardBackward = -moveInput.Y;

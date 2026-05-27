@@ -28,7 +28,7 @@ public partial class MainCamera : Camera3D
     private Marker3D CameraHintMarker;
 
     private float Distance = 0.0f;
-    private float Yaw = 0.0f;
+    public float Yaw = 0.0f;
     private float Pitch = 0.0f;
 
     private float CameraHintWeight = 0.0f;
@@ -56,19 +56,25 @@ public partial class MainCamera : Camera3D
                                             "camera_right",
                                             "camera_up",
                                             "camera_down");
-
         bool hasInput = lookInput.LengthSquared() > 0.01f;
 
-        if (hasInput)
+        bool isInCameraHint = IsPlayerInsideCameraHint();
+        if (isInCameraHint)
         {
-            Yaw -= lookInput.X * OrbitSensitivity * dt;
-            Pitch -= lookInput.Y * OrbitSensitivity * dt;
+            Yaw = CameraHintMarker.GlobalRotation.Y;
         }
         else
         {
-            Vector3 behindPlayer = Player.GlobalTransform.Basis.Z.Normalized();
-            float targetYaw = Mathf.Atan2(behindPlayer.X, behindPlayer.Z);
-            Yaw = Mathf.LerpAngle(Yaw, targetYaw, AutoAlignSpeed * dt);
+            if (hasInput)
+            {
+                Yaw -= lookInput.X * OrbitSensitivity * dt;
+                Pitch -= lookInput.Y * OrbitSensitivity * dt;
+            }
+            else
+            {
+                float targetYaw = Player.GetFacingYaw();
+                Yaw = Mathf.LerpAngle(Yaw, targetYaw, AutoAlignSpeed * dt);
+            }
         }
 
         float minPitch = Mathf.DegToRad(MinPitchDeg);
@@ -83,8 +89,6 @@ public partial class MainCamera : Camera3D
         normalPosition = ApplyWhiskerAvoidance(Player.GlobalPosition, normalPosition);
 
         Transform3D normalTransform = CreateLookAtTransform(normalPosition, Player.GlobalPosition);
-
-        bool isInCameraHint = IsPlayerInsideCameraHint();
 
         float targetHintWeight = isInCameraHint ? 1.0f : 0.0f;
         CameraHintWeight = Mathf.MoveToward(CameraHintWeight, targetHintWeight, HintBlendSpeed * dt);
